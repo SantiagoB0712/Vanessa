@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Sorteo de Amor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fbe8f8, #d7ecff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .card {
+      background: #ffffffdd;
+      padding: 3rem 4rem;
+      border-radius: 2rem;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 600px;
+      width: 90%;
+      position: relative;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+    }
+    .card h1 {
+      font-size: 2rem;
+      color: #444;
+      margin-bottom: 2rem;
+    }
+    .card button {
+      background-color: #e91e63;
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .card button:hover {
+      background-color: #c2185b;
+      transform: scale(1.05);
+    }
+    .resultado {
+      margin-top: 2rem;
+      font-size: 2.2rem;
+      color: #333;
+      font-weight: bold;
+      height: 2.5rem;
+    }
+    .number-animation {
+      font-size: 2.2rem;
+      color: #555;
+      animation: flicker 0.1s linear infinite;
+    }
+    @keyframes flicker {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .float-emoji, .meme {
+      position: fixed;
+      animation: floatMeme 5s linear infinite;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .float-emoji {
+      font-size: 2rem;
+    }
+    .meme {
+      width: 100px;
+      height: auto;
+    }
+    @keyframes floatMeme {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-200px) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fuegos"></canvas>
+  <div class="card">
+    <h1 id="mensaje">Vanessa, no te puedo ganar siempre,<br>me tienes que ganar de vez en cuando 😁</h1>
+    <button id="sortear">Iniciar sorteo</button>
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+  <script>
+    const resultado = document.getElementById('resultado');
+    const boton = document.getElementById('sortear');
+    const mensaje = document.getElementById('mensaje');
+    let mostrarFuegos = false;
+    let intento = 0;
+    let efectosActivos = [];
+
+    const canvas = document.getElementById('fuegos');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    const particles = [];
+
+    function lanzarEmojis(emoji) {
+      for (let i = 0; i < 20; i++) {
+        const e = document.createElement('div');
+        e.textContent = emoji;
+        e.classList.add('float-emoji');
+        e.style.left = Math.random() * 100 + 'vw';
+        e.style.top = Math.random() * 100 + 'vh';
+        e.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+        document.body.appendChild(e);
+        efectosActivos.push(e);
+      }
+    }
+
+    function lanzarMemes(imgSrc) {
+      for (let i = 0; i < 20; i++) {
+        const meme = document.createElement('img');
+        meme.src = imgSrc;
+        meme.classList.add('meme');
+        meme.style.left = Math.random() * 100 + 'vw';
+        meme.style.top = Math.random() * 100 + 'vh';
+        document.body.appendChild(meme);
+        efectosActivos.push(meme);
+      }
+    }
+
+    function limpiarEfectos() {
+      efectosActivos.forEach(el => el.remove());
+      efectosActivos = [];
+    }
+
+    function animarNumeros(callback) {
+      let count = 0;
+      const interval = setInterval(() => {
+        const num = Math.floor(Math.random() * 100);
+        resultado.textContent = num;
+        resultado.classList.add('number-animation');
+        count++;
+        if (count > 15) {
+          clearInterval(interval);
+          resultado.classList.remove('number-animation');
+          limpiarEfectos();
+
+          if (intento % 3 === 0) {
+            resultado.textContent = "Número ganador: 30 😂";
+            mensaje.innerHTML = "Perdiste 🤣";
+            lanzarEmojis('😂');
+          } else if (intento % 3 === 1) {
+            resultado.textContent = "Número ganador: 14 😅";
+            mensaje.innerHTML = "Perdiste otra vez 🙃";
+            lanzarMemes("./monalisabotero.png");
+          } else {
+            resultado.textContent = "Número ganador: 19 💖";
+            mensaje.innerHTML = "Ganaste Vanessa, ahora eres mi novia (espero) 💞";
+            mostrarFuegos = true;
+          }
+
+          intento++;
+          if (callback) callback();
+        }
+      }, 100);
+    }
+
+    boton.addEventListener('click', () => {
+      resultado.textContent = "Generando número...";
+      animarNumeros();
+    });
+
+    function lanzarFuegos(centerX = Math.random() * w, centerY = Math.random() * h / 2) {
+      for (let i = 0; i < 25; i++) {
+        particles.push({ x: centerX, y: centerY, radius: Math.random() * 2 + 1, color: `hsl(${Math.random() * 360}, 100%, 70%)`, stroke: null, angle: Math.random() * 2 * Math.PI, speed: Math.random() * 6 + 2, alpha: 1 });
+      }
+    }
+
+    function animateFuegos() {
+      ctx.clearRect(0, 0, w, h);
+      if (mostrarFuegos) lanzarFuegos();
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        if (!mostrarFuegos && p.vx !== undefined && p.vy !== undefined) {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x <= 0 || p.x >= w) p.vx *= -1;
+          if (p.y <= 0 || p.y >= h) p.vy *= -1;
+        } else {
+          p.x += Math.cos(p.angle) * p.speed;
+          p.y += Math.sin(p.angle) * p.speed;
+        }
+        p.alpha -= 0.003;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animateFuegos);
+    }
+
+    animateFuegos();
+    window.addEventListener('resize', () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
+
